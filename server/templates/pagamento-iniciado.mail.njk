@@ -1,0 +1,75 @@
+{% extends "base.mail.njk" %}
+
+{% block titulo %}Pagamento iniciado{% endblock %}
+
+{% block content %}
+  <!-- Saudação -->
+  <p style="font-size:14px; color:#374151; margin:0 0 12px 0;">
+    Caro(a) <strong>{{ name }}</strong>,
+  </p>
+
+  <!-- Texto principal -->
+  <p style="font-size:14px; color:#4b5563; line-height:1.6; margin:0 0 20px 0;">
+    Informamos que o pagamento do prêmio referente à sua participação como {{ tipo }} no programa <strong>Nota Toledo</strong> foi iniciado. Confira abaixo as informações de pagamento cadastradas.
+  </p>
+
+  <!-- Resumo do pagamento -->
+  <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb; border-radius:6px; margin:0 0 20px 0;">
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px;">Valor do prêmio</td>
+      <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px;">{{ valorPremio }}</td>
+    </tr>
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Haverá compensação?</td>
+      <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{ haveraCompensacao }}</td>
+    </tr>
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Valor da compensação</td>
+      <td align="right" style="font-size:13px; font-weight:bold; color:#d97706; padding:12px 16px; border-top:1px solid #e5e7eb;">{{ valorCompensado }}</td>
+    </tr>
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Valor final a receber</td>
+      <td align="right" style="font-size:15px; font-weight:bold; color:#16a34a; padding:12px 16px; border-top:1px solid #e5e7eb;">{{ valorReceber }}</td>
+    </tr>
+  </table>
+
+  <!-- Dados bancários -->
+  <p style="font-size:12px; font-weight:bold; color:#6b7280; text-transform:uppercase; letter-spacing:1px; margin:0 0 8px 0;">
+    Dados bancários cadastrados
+  </p>
+  <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb; border-radius:6px; margin:0 0 20px 0;">
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px;">Banco</td>
+      <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px;">{{ dadosBancarios.banco }}</td>
+    </tr>
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Agência</td>
+      <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{ dadosBancarios.agencia }}</td>
+    </tr>
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Conta</td>
+      <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{ dadosBancarios.conta }}</td>
+    </tr>
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Dígito</td>
+      <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{ dadosBancarios.digito }}</td>
+    </tr>
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Tipo de conta</td>
+      <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{ dadosBancarios.tipoConta }}</td>
+    </tr>
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Documento do titular</td>
+      <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{ dadosBancarios.documento }}</td>
+    </tr>
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Nome do titular</td>
+      <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{ name }}</td>
+    </tr>
+  </table>
+
+  <!-- Aviso -->
+  <p style="font-size:13px; color:#92400e; line-height:1.6; margin:0;">
+    Confira atentamente os dados acima. Caso identifique qualquer divergência, entre em contato com a Secretaria da Fazenda antes da conclusão do pagamento.
+  </p>
+{% endblock %}

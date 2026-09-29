@@ -1,0 +1,35 @@
+{% extends "base.mail.njk" %}
+
+{% block titulo %}Bem-vindo ao Sistema Interno{% endblock %}
+
+{% block content %}
+  <!-- Saudação -->
+  <p style="font-size:14px; color:#374151; margin:0 0 12px 0;">
+    Olá, <strong>{{ name }}</strong>,
+  </p>
+
+  <!-- Texto principal -->
+  <p style="font-size:14px; color:#4b5563; line-height:1.6; margin:0 0 16px 0;">
+    Seja bem-vindo(a) ao <strong>Sistema Interno do NotaToledo</strong>. Seu cadastro como servidor foi realizado com sucesso e você já possui acesso às funcionalidades disponíveis para o seu cargo.
+  </p>
+
+  <p style="font-size:14px; color:#4b5563; line-height:1.6; margin:0 0 16px 0;">
+    Este sistema foi desenvolvido para facilitar a gestão e o controle de notas fiscais emitidas no município de Toledo – PR, integrando os processos internos da Prefeitura de forma segura e eficiente.
+  </p>
+
+  <!-- Aviso de acesso restrito -->
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0;">
+    <tr>
+      <td style="background-color:#fef3c7; border-left:4px solid #f59e0b; border-radius:4px; padding:16px 20px;">
+        <p style="font-size:13px; color:#92400e; margin:0; line-height:1.6;">
+          <strong>Acesso restrito à rede interna</strong><br/>
+          Este serviço poderá ser usado apenas dentro da rede interna da prefeitura. Tentativas de acesso externo não serão permitidas.
+        </p>
+      </td>
+    </tr>
+  </table>
+
+  <p style="font-size:14px; color:#4b5563; line-height:1.6; margin:0;">
+    Em caso de dúvidas ou dificuldades de acesso, entre em contato com o setor de Tecnologia da Informação da Prefeitura Municipal de Toledo.
+  </p>
+{% endblock %}

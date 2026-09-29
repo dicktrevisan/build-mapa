@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Pagamento iniciado – NOTA TOLEDO</title>
+  </head>
+
+  <body style="margin:0; padding:0; background-color:#f4f6f8; font-family: Arial, Helvetica, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding: 40px 0;">
+      <tr>
+        <td align="center">
+          <table width="480" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:8px; padding:32px;">
+
+            <!-- Logo -->
+            <tr>
+              <td align="center" style="padding-bottom:20px;">
+                <img
+                  src="cid:toledoLogo"
+                  width="180"
+                  alt="Prefeitura de Toledo – Secretaria da Fazenda"
+                  style="display:block; margin:0 auto; max-width:100%; height:auto;"
+                />
+              </td>
+            </tr>
+
+            <!-- Cabeçalho -->
+            <tr>
+              <td style="text-align:center; font-size:22px; font-weight:bold; color:#1f2937; padding-bottom:16px;">
+                Pagamento iniciado
+              </td>
+            </tr>
+
+            <!-- Saudação -->
+            <tr>
+              <td style="font-size:14px; color:#374151; padding-bottom:12px;">
+                Caro(a) <strong>{{target.name}}</strong>,
+              </td>
+            </tr>
+
+            <!-- Texto principal -->
+            <tr>
+              <td style="font-size:14px; color:#4b5563; padding-bottom:20px; line-height:1.6;">
+                Informamos que o pagamento do prêmio referente à sua participação como {{target.tipo}} no programa <strong>NotaToledo</strong> foi iniciado. Confira abaixo as informações de pagamento cadastradas.
+              </td>
+            </tr>
+
+            <!-- Resumo do pagamento -->
+            <tr>
+              <td style="padding-bottom:20px;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb; border-radius:6px;">
+                  <tr>
+                    <td style="font-size:13px; color:#6b7280; padding:12px 16px;">Valor do prêmio</td>
+                    <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px;">{{valorPremio}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Haverá compensação?</td>
+                    <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{haveraCompensacao}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Valor da compensação</td>
+                    <td align="right" style="font-size:13px; font-weight:bold; color:#d97706; padding:12px 16px; border-top:1px solid #e5e7eb;">{{valorCompensado}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Valor final a receber</td>
+                    <td align="right" style="font-size:15px; font-weight:bold; color:#16a34a; padding:12px 16px; border-top:1px solid #e5e7eb;">{{valorReceber}}</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Dados bancários -->
+            <tr>
+              <td style="font-size:12px; font-weight:bold; color:#6b7280; text-transform:uppercase; letter-spacing:1px; padding-bottom:8px;">
+                Dados bancários cadastrados
+              </td>
+            </tr>
+            <tr>
+              <td style="padding-bottom:20px;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb; border-radius:6px;">
+                  <tr>
+                    <td style="font-size:13px; color:#6b7280; padding:12px 16px;">Banco</td>
+                    <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px;">{{dadosBancarios.banco}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Agência</td>
+                    <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{dadosBancarios.agencia}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Conta</td>
+                    <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{dadosBancarios.conta}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Dígito</td>
+                    <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{dadosBancarios.digito}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Tipo de conta</td>
+                    <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{dadosBancarios.tipoConta}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Documento do titular</td>
+                    <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{dadosBancarios.documento}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Nome do titular</td>
+                    <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{target.name}}</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Aviso -->
+            <tr>
+              <td style="font-size:13px; color:#92400e; padding-bottom:24px; line-height:1.6;">
+                Confira atentamente os dados acima. Caso identifique qualquer divergência, entre em contato com a Secretaria da Fazenda antes da conclusão do pagamento.
+              </td>
+            </tr>
+
+            <!-- Rodapé -->
+            <tr>
+              <td style="font-size:12px; color:#6b7280; line-height:1.5; border-top:1px solid #e5e7eb; padding-top:16px;">
+                Para dúvidas, entre em contato com a Secretaria da Fazenda do Município de Toledo pelo telefone 3196-2223.<br/>
+                Este é um e-mail automático. Caso não reconheça este pagamento, entre em contato com a Secretaria da Fazenda.
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -1,0 +1,34 @@
+{% extends "base.mail.njk" %}
+
+{% block titulo %}Código de ativação{% endblock %}
+
+{% block content %}
+  <!-- Saudação -->
+  <p style="font-size:14px; color:#374151; margin:0 0 12px 0;">
+    Caro(a) <strong>{{ name }}</strong>,
+  </p>
+
+  <!-- Texto principal -->
+  <p style="font-size:14px; color:#4b5563; line-height:1.6; margin:0 0 24px 0;">
+    É um prazer tê-lo conosco no programa <strong>Nota Toledo</strong>.
+    Para concluir seu acesso com segurança, utilize o código de ativação abaixo.
+  </p>
+
+  <!-- Código -->
+  <table align="center" cellpadding="0" cellspacing="0" style="margin:0 auto 24px auto;">
+    <tr>
+      {% for digito in codigo %}
+        {% if not loop.first %}<td width="8"></td>{% endif %}
+        <td style="width:48px; height:56px; border:1px solid #d1d5db; border-radius:6px; text-align:center; font-size:24px; font-weight:bold; color:#1f2937;">
+          {{ digito }}
+        </td>
+      {% endfor %}
+    </tr>
+  </table>
+
+  <!-- Aviso -->
+  <p style="font-size:13px; color:#92400e; line-height:1.6; margin:0;">
+    Este código é pessoal e intransferível, válido por tempo limitado.
+    Caso você não tenha solicitado este acesso, basta desconsiderar este e-mail.
+  </p>
+{% endblock %}

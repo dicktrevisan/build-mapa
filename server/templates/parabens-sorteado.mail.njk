@@ -1,0 +1,40 @@
+{% extends "base.mail.njk" %}
+
+{% block titulo %}Parabéns! Você foi sorteado{% endblock %}
+
+{% block content %}
+  <!-- Saudação -->
+  <p style="font-size:14px; color:#374151; margin:0 0 12px 0;">
+    Caro(a) <strong>{{ name }}</strong>,
+  </p>
+
+  <!-- Texto principal -->
+  <p style="font-size:14px; color:#4b5563; line-height:1.6; margin:0 0 20px 0;">
+    Você foi sorteado(a) no programa <strong>Nota Toledo</strong>! Para solicitar o recebimento do seu prêmio, acesse o portal NotaToledo e cadastre uma conta bancária de sua titularidade.
+  </p>
+
+  <!-- Dados do prêmio -->
+  <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb; border-radius:6px; margin:0 0 20px 0;">
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px;">Valor do prêmio</td>
+      <td align="right" style="font-size:15px; font-weight:bold; color:#16a34a; padding:12px 16px;">{{ valorPremio }}</td>
+    </tr>
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Documento</td>
+      <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{ documento }}</td>
+    </tr>
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Data do sorteio</td>
+      <td align="right" style="font-size:13px; color:#1f2937; padding:12px 16px; border-top:1px solid #e5e7eb;">{{ dataSorteio }}</td>
+    </tr>
+    <tr>
+      <td style="font-size:13px; color:#6b7280; padding:12px 16px; border-top:1px solid #e5e7eb;">Prazo para solicitação</td>
+      <td align="right" style="font-size:13px; font-weight:bold; color:#d97706; padding:12px 16px; border-top:1px solid #e5e7eb;">{{ dataExpiracao }}</td>
+    </tr>
+  </table>
+
+  <!-- Aviso de prazo -->
+  <p style="font-size:13px; color:#92400e; line-height:1.6; margin:0;">
+    Atenção: o prêmio deve ser solicitado até <strong>{{ dataExpiracao }}</strong>. Após esta data, ele poderá expirar.
+  </p>
+{% endblock %}

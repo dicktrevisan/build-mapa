@@ -1,0 +1,44 @@
+{% extends "base.mail.njk" %}
+
+{% block titulo %}Resultado do sorteio{% endblock %}
+
+{% block content %}
+  <!-- Identificação do sorteio -->
+  <p style="font-size:14px; color:#4b5563; line-height:1.6; margin:0 0 20px 0;">
+    Segue o resultado do sorteio da competência <strong>{{ competencia }}</strong>,
+    realizado em <strong>{{ dataSorteio }}</strong>.
+  </p>
+
+  {% for secao in secoes %}
+    <!-- {{ secao.titulo }} -->
+    <p style="font-size:15px; font-weight:bold; color:#1f2937; margin:0 0 10px 0;">
+      {{ secao.titulo }}
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border:1px solid #e5e7eb; margin:0 0 24px 0;">
+      <tr>
+        <th align="left" style="font-size:11px; color:#1f2937; background-color:#f3f4f6; padding:8px 10px; border-bottom:1px solid #e5e7eb;">tomador</th>
+        <th align="left" style="font-size:11px; color:#1f2937; background-color:#f3f4f6; padding:8px 10px; border-bottom:1px solid #e5e7eb;">cpf</th>
+        <th align="left" style="font-size:11px; color:#1f2937; background-color:#f3f4f6; padding:8px 10px; border-bottom:1px solid #e5e7eb;">prestador</th>
+        <th align="left" style="font-size:11px; color:#1f2937; background-color:#f3f4f6; padding:8px 10px; border-bottom:1px solid #e5e7eb;">cnpj</th>
+      </tr>
+      {% for linha in secao.linhas %}
+      <tr>
+        <td style="font-size:11px; color:#374151; padding:8px 10px; border-bottom:1px solid #e5e7eb; word-break:break-word;">{{ linha.tomador }}</td>
+        <td style="font-size:11px; color:#374151; padding:8px 10px; border-bottom:1px solid #e5e7eb; white-space:nowrap;">{{ linha.cpf }}</td>
+        <td style="font-size:11px; color:#374151; padding:8px 10px; border-bottom:1px solid #e5e7eb; word-break:break-word;">{{ linha.prestador }}</td>
+        <td style="font-size:11px; color:#374151; padding:8px 10px; border-bottom:1px solid #e5e7eb; white-space:nowrap;">{{ linha.cnpj }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="4" style="font-size:11px; color:#6b7280; padding:8px 10px; border-bottom:1px solid #e5e7eb;">Nenhum vencedor</td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% endfor %}
+
+  <!-- Anexo -->
+  <p style="font-size:13px; color:#6b7280; line-height:1.6; margin:0;">
+    A mesma relação segue anexa a este e-mail em formato PDF.
+  </p>
+{% endblock %}

@@ -8,13 +8,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
 model User {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
   nome            String
-  email           String @unique
-  password           String
+  email           String    @unique
+  password        String
   senhaProvisoria String?
   documento       String
   endereco        Endereco?
@@ -22,14 +20,15 @@ model User {
   emailSecundario String?
   fazenda         Fazenda?  @relation(fields: [fazendaId], references: [id])
   role            Role
-  ativo           Boolean  @default(false)
-  validado        Boolean  @default(false)
-  bloqueado        Boolean  @default(false)
+  ativo           Boolean   @default(false)
+  validado        Boolean   @default(false)
+  bloqueado       Boolean   @default(false)
+  lancamentos     Lancamento[]
 
   lastLogin DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  fazendaId String?   @db.ObjectId
+  fazendaId String?  @db.ObjectId
 }
 
 model Fazenda {
@@ -43,13 +42,40 @@ model Fazenda {
   area         Float
   plano        Planos
   idioma       Idiomas     @relation(fields: [idiomasId], references: [id])
-  idiomasId String   @db.ObjectId
+  idiomasId    String      @db.ObjectId
   categorias   Categoria[]
+  validade     DateTime
+  pagamentos   Pagamento[]
 
+  // Dados da propriedade (base: properties)
+  proprietario String?
+  unidadesMo   Float       @default(0)
+  aliquotaIr   Float       @default(0)
+  fotoPath     String?
+
+  bancos               Banco[]
+  titulares            Titular[]
+  lancamentos          Lancamento[]
+  orcamentos           Orcamento[]
+  zeragens             Zeragem[]
+  registrosMensais     RegistroMensal[]
+  imobilizados         Imobilizado[]
+  balancosPatrimoniais BalancoPatrimonial[]
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Pagamento {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  fazenda   Fazenda? @relation(fields: [fazendaId], references: [id])
+  fazendaId String?  @db.ObjectId
+  dataPagamento DateTime @default(now())
   validade DateTime
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  cpfPagador String
+  valor Float
+  
 }
 
 type Endereco {
@@ -109,6 +135,197 @@ model SubCategoria {
   cor         String
   categoria   Categoria @relation(fields: [categoriaId], references: [id])
   categoriaId String    @db.ObjectId
+  tipo        TipoFluxo
+  lancamentos Lancamento[]
+}
+
+// --- Fluxo de caixa (base: cf_bancos, cf_titulares, cf_lancamentos, cf_orcamento, cf_zeragem) ---
+
+model Banco {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  nome        String
+  fazenda     Fazenda      @relation(fields: [fazendaId], references: [id])
+  fazendaId   String       @db.ObjectId
+  lancamentos Lancamento[]
+  createdAt   DateTime     @default(now())
+
+  @@unique([fazendaId, nome])
+}
+
+model Titular {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  nome        String
+  fazenda     Fazenda      @relation(fields: [fazendaId], references: [id])
+  fazendaId   String       @db.ObjectId
+  lancamentos Lancamento[]
+  createdAt   DateTime     @default(now())
+
+  @@unique([fazendaId, nome])
+}
+
+model Lancamento {
+  id              String             @id @default(auto()) @map("_id") @db.ObjectId
+  descricao       String
+  valor           Float
+  data            DateTime
+  dataVencimento  DateTime?
+  mesesUtilizacao Int                @default(1)
+  situacao        SituacaoLancamento @default(FINALIZADO)
+  semNotaFiscal   Boolean            @default(false)
+  notaFiscalNome  String?
+  notaFiscalPath  String?
+  parcelaGrupoId  String?
+  parcelaNum      Int?
+  parcelaTotal    Int?
+
+  fazenda        Fazenda      @relation(fields: [fazendaId], references: [id])
+  fazendaId      String       @db.ObjectId
+  subCategoria   SubCategoria @relation(fields: [subCategoriaId], references: [id])
+  subCategoriaId String       @db.ObjectId
+  banco          Banco?       @relation(fields: [bancoId], references: [id])
+  bancoId        String?      @db.ObjectId
+  titular        Titular?     @relation(fields: [titularId], references: [id])
+  titularId      String?      @db.ObjectId
+  operador       User?        @relation(fields: [operadorId], references: [id])
+  operadorId     String?      @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Orcamento {
+  id            String  @id @default(auto()) @map("_id") @db.ObjectId
+  ano           Int
+  mes           Int
+  valorPrevisto Float   @default(0)
+  observacao    String?
+  fazenda       Fazenda @relation(fields: [fazendaId], references: [id])
+  fazendaId     String  @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fazendaId, ano, mes])
+}
+
+model Zeragem {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  ano          Int
+  mes          Int
+  modo         ModoZeragem
+  valorOrigem  Float   @default(0)
+  valorAlocado Float   @default(0)
+  contaAtivo   String?
+  observacao   String?
+  fazenda      Fazenda @relation(fields: [fazendaId], references: [id])
+  fazendaId    String  @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fazendaId, ano, mes])
+}
+
+// --- Fluxo gerencial (base: monthly_records, imobilizado) ---
+
+model RegistroMensal {
+  id               String  @id @default(auto()) @map("_id") @db.ObjectId
+  ano              Int
+  mes              Int
+  litrosProduzidos Float   @default(0)
+  precoLeiteLitro  Float   @default(0)
+  vacasLactacao    Int     @default(0)
+  vacasSecas       Int     @default(0)
+  recria           Int     @default(0)
+  observacoes      String?
+  fazenda          Fazenda @relation(fields: [fazendaId], references: [id])
+  fazendaId        String  @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fazendaId, ano, mes])
+}
+
+model Imobilizado {
+  id                    String               @id @default(auto()) @map("_id") @db.ObjectId
+  ano                   Int
+  mes                   Int
+  categoria             CategoriaImobilizado
+  descricao             String               @default("")
+  valor                 Float                @default(0)
+  valorNovo             Float?
+  valorSucata           Float?
+  vidaUtil              Float?
+  tempoUso              Float?
+  taxaJurosAa           Float?
+  usarCustoOportunidade Boolean              @default(true)
+  fazenda               Fazenda              @relation(fields: [fazendaId], references: [id])
+  fazendaId             String               @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --- Fluxo contabil (base: balanco_patrimonial) ---
+
+model BalancoPatrimonial {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  ano       Int
+  mes       Int
+  secao     SecaoBalanco
+  conta     String
+  valor     Float        @default(0)
+  fazenda   Fazenda      @relation(fields: [fazendaId], references: [id])
+  fazendaId String       @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum TipoFluxo {
+  RECEITAS
+  DESEMBOLSO
+  FIXO
+  VARIAVEL
+  DESPESA_FINANCEIRA
+  INVESTIMENTO
+  NAO_OPERACIONAL
+}
+
+enum SituacaoLancamento {
+  ABERTO
+  FINALIZADO
+}
+
+// TOTAL_ATIVO move todo o saldo para uma conta do Ativo Circulante,
+// PARCIAL_ATIVO move parte, ZERAR apenas zera o saldo
+enum ModoZeragem {
+  TOTAL_ATIVO
+  PARCIAL_ATIVO
+  ZERAR
+}
+
+enum CategoriaImobilizado {
+  REBANHO
+  EQUIPAMENTOS
+  MAQUINAS
+  TERRA
+  INSTALACOES
+  CASAS
+}
+
+// AC ativo circulante, AI ativo intermediario, AL ativo longo prazo,
+// PC passivo circulante, PI passivo intermediario, PLP passivo longo prazo,
+// PL patrimonio liquido
+enum SecaoBalanco {
+  AC
+  AI
+  AL
+  PC
+  PI
+  PL
+  PLP
 }
 
 enum Role {
@@ -116,10 +333,8 @@ enum Role {
   USER
 }
 
-
 enum AuthType {
   CHECK
   AUTH
   NONE
-  
 }
