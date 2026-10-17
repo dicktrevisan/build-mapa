@@ -18,12 +18,19 @@ model User {
   endereco        Endereco?
   telefone        String
   emailSecundario String?
-  fazenda         Fazenda?  @relation(fields: [fazendaId], references: [id])
+  fazenda         Fazenda?  @relation("FuncionariosFazenda", fields: [fazendaId], references: [id])
+  // Fazendas em que o usuario e o administrador
+  fazendasAdministradas Fazenda[] @relation("AdministradorFazenda")
   role            Role
   ativo           Boolean   @default(false)
   validado        Boolean   @default(false)
   bloqueado       Boolean   @default(false)
   lancamentos     Lancamento[]
+  planoPessoal PlanoPessoal @default(CONVIDADO)
+  // Convites para operadores que este usuario enviou como administrador da fazenda
+  convitesEnviados Convite[] @relation("ConvitesEnviados")
+  // Lado virtual da relacao 1-1 (o Prisma exige); nada e gravado no usuario
+  organizadorPessoal OrganizadorPessoal?
 
   lastLogin DateTime @default(now())
   createdAt DateTime @default(now())
@@ -36,7 +43,11 @@ model Fazenda {
   nome         String
   razaoSocial  String
   cnpj         String?
-  funcionarios User[]
+  funcionarios User[]      @relation("FuncionariosFazenda")
+  // Administrador da fazenda: toda fazenda criada tem um (opcional so para as ja existentes)
+  // NoAction quebra o ciclo User.fazenda -> Fazenda.administrador (o app nao apaga usuarios nem troca ids)
+  administrador   User?    @relation("AdministradorFazenda", fields: [administradorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  administradorId String?  @db.ObjectId
   endereco     String
   modulos      Modulos[]
   area         Float
@@ -61,6 +72,7 @@ model Fazenda {
   registrosMensais     RegistroMensal[]
   imobilizados         Imobilizado[]
   balancosPatrimoniais BalancoPatrimonial[]
+  convites             Convite[]
 
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -99,6 +111,7 @@ enum Modulos {
   ORCAMENTO
   IMOBILIZADO
   STORAGE
+  PESSOAL
 }
 
 enum Planos {
@@ -107,7 +120,13 @@ enum Planos {
   PRO
   MASTER
 }
-
+enum PlanoPessoal {
+  CONVIDADO
+  STARTER
+  PLUS
+  PRO
+  MASTER
+}
 model Idiomas {
   id         String    @id @default(auto()) @map("_id") @db.ObjectId
   referencia String
@@ -197,7 +216,10 @@ model Orcamento {
   id            String  @id @default(auto()) @map("_id") @db.ObjectId
   ano           Int
   mes           Int
+  // Estimativas do mes (digitadas): valorPrevisto e a despesa prevista
   valorPrevisto Float   @default(0)
+  // Opcional porque os orcamentos antigos nao tem o campo gravado
+  receitaPrevista Float?
   observacao    String?
   fazenda       Fazenda @relation(fields: [fazendaId], references: [id])
   fazendaId     String  @db.ObjectId
@@ -331,10 +353,134 @@ enum SecaoBalanco {
 enum Role {
   ADMIN
   USER
+  MASTER
+}
+
+// Convite do administrador da fazenda para um operador (role USER), pelo e-mail.
+// O link de ativacao e um JWT (e-mail + fazenda); este registro permite listar,
+// cancelar e usar o convite uma vez so (o aceite exige um convite PENDENTE).
+// NoAction nas relacoes evita ciclos (Convite -> User -> Fazenda e Convite -> Fazenda)
+model Convite {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  email          String
+  status         StatusConvite @default(PENDENTE)
+  validade       DateTime
+  aceitoEm       DateTime?
+  fazenda        Fazenda       @relation(fields: [fazendaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fazendaId      String        @db.ObjectId
+  convidadoPor   User          @relation("ConvitesEnviados", fields: [convidadoPorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  convidadoPorId String        @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum StatusConvite {
+  PENDENTE
+  ACEITO
+  CANCELADO
 }
 
 enum AuthType {
   CHECK
   AUTH
   NONE
+}
+
+// --- Financas pessoais (modulo separado: nada da fazenda) ---
+
+// Dados do organizador pessoal: opcional, criado no primeiro acesso de quem tem plano pessoal
+model OrganizadorPessoal {
+  id          String              @id @default(auto()) @map("_id") @db.ObjectId
+  usuario     User                @relation(fields: [usuarioId], references: [id])
+  usuarioId   String              @unique @db.ObjectId
+  contas      ContaPessoal[]
+  categorias  CategoriaPessoal[]
+  lancamentos LancamentoPessoal[]
+  orcamentos  OrcamentoPessoal[]
+  metas       MetaPessoal[]
+  createdAt   DateTime            @default(now())
+}
+
+model ContaPessoal {
+  id            String              @id @default(auto()) @map("_id") @db.ObjectId
+  nome          String
+  tipo          TipoContaPessoal
+  saldoInicial  Float               @default(0)
+  organizador   OrganizadorPessoal  @relation(fields: [organizadorId], references: [id])
+  organizadorId String              @db.ObjectId
+  lancamentos   LancamentoPessoal[]
+  createdAt     DateTime            @default(now())
+
+  @@unique([organizadorId, nome])
+}
+
+model CategoriaPessoal {
+  id            String                @id @default(auto()) @map("_id") @db.ObjectId
+  nome          String
+  tipo          TipoLancamentoPessoal
+  organizador   OrganizadorPessoal    @relation(fields: [organizadorId], references: [id])
+  organizadorId String                @db.ObjectId
+  lancamentos   LancamentoPessoal[]
+  orcamentos    OrcamentoPessoal[]
+  createdAt     DateTime              @default(now())
+
+  @@unique([organizadorId, nome, tipo])
+}
+
+model LancamentoPessoal {
+  id            String                @id @default(auto()) @map("_id") @db.ObjectId
+  descricao     String
+  valor         Float
+  data          DateTime
+  tipo          TipoLancamentoPessoal
+  situacao      SituacaoLancamento    @default(FINALIZADO)
+  observacao    String?
+  categoria     CategoriaPessoal      @relation(fields: [categoriaId], references: [id])
+  categoriaId   String                @db.ObjectId
+  conta         ContaPessoal          @relation(fields: [contaId], references: [id])
+  contaId       String                @db.ObjectId
+  organizador   OrganizadorPessoal    @relation(fields: [organizadorId], references: [id])
+  organizadorId String                @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrcamentoPessoal {
+  id            String             @id @default(auto()) @map("_id") @db.ObjectId
+  ano           Int
+  mes           Int
+  valorPrevisto Float              @default(0)
+  categoria     CategoriaPessoal   @relation(fields: [categoriaId], references: [id])
+  categoriaId   String             @db.ObjectId
+  organizador   OrganizadorPessoal @relation(fields: [organizadorId], references: [id])
+  organizadorId String             @db.ObjectId
+
+  @@unique([organizadorId, categoriaId, ano, mes])
+}
+
+model MetaPessoal {
+  id            String             @id @default(auto()) @map("_id") @db.ObjectId
+  nome          String
+  valorAlvo     Float
+  valorAtual    Float              @default(0)
+  prazo         DateTime?
+  organizador   OrganizadorPessoal @relation(fields: [organizadorId], references: [id])
+  organizadorId String             @db.ObjectId
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+enum TipoContaPessoal {
+  CORRENTE
+  POUPANCA
+  CARTEIRA
+  CARTAO_CREDITO
+  INVESTIMENTO
+}
+
+enum TipoLancamentoPessoal {
+  RECEITA
+  DESPESA
 }

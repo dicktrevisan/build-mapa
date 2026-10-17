@@ -1,0 +1,50 @@
+{% extends "base-financas.mail.njk" %}
+
+{% block titulo %}Novo operador na fazenda{% endblock %}
+
+{% block content %}
+  <p style="font-size:14px; color:#374151; margin:0 0 12px 0;">
+    Olá, <strong>{{ administrador }}</strong>,
+  </p>
+
+  <p style="font-size:14px; color:#4b5563; line-height:1.6; margin:0 0 16px 0;">
+    O convite que você enviou foi aceito. A pessoa abaixo vai ingressar como <strong>operador</strong> da fazenda
+    <strong>{{ fazenda }}</strong>.
+  </p>
+
+  <!-- Dados pessoais do operador -->
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 16px 0; border:1px solid #e5e7eb; border-radius:6px;">
+    <tr>
+      <td style="padding:10px 16px; font-size:12px; color:#6b7280; width:35%;">Nome</td>
+      <td style="padding:10px 16px; font-size:14px; color:#1f2937;"><strong>{{ operador.nome }}</strong></td>
+    </tr>
+    <tr>
+      <td style="padding:10px 16px; font-size:12px; color:#6b7280; border-top:1px solid #e5e7eb;">E-mail</td>
+      <td style="padding:10px 16px; font-size:14px; color:#1f2937; border-top:1px solid #e5e7eb;">{{ operador.email }}</td>
+    </tr>
+    <tr>
+      <td style="padding:10px 16px; font-size:12px; color:#6b7280; border-top:1px solid #e5e7eb;">CPF</td>
+      <td style="padding:10px 16px; font-size:14px; color:#1f2937; border-top:1px solid #e5e7eb;">{{ operador.documento }}</td>
+    </tr>
+    <tr>
+      <td style="padding:10px 16px; font-size:12px; color:#6b7280; border-top:1px solid #e5e7eb;">Telefone</td>
+      <td style="padding:10px 16px; font-size:14px; color:#1f2937; border-top:1px solid #e5e7eb;">{{ operador.telefone }}</td>
+    </tr>
+    {% if operador.emailSecundario %}
+    <tr>
+      <td style="padding:10px 16px; font-size:12px; color:#6b7280; border-top:1px solid #e5e7eb;">E-mail secundário</td>
+      <td style="padding:10px 16px; font-size:14px; color:#1f2937; border-top:1px solid #e5e7eb;">{{ operador.emailSecundario }}</td>
+    </tr>
+    {% endif %}
+    {% if operador.endereco %}
+    <tr>
+      <td style="padding:10px 16px; font-size:12px; color:#6b7280; border-top:1px solid #e5e7eb;">Endereço</td>
+      <td style="padding:10px 16px; font-size:14px; color:#1f2937; border-top:1px solid #e5e7eb;">{{ operador.endereco }}</td>
+    </tr>
+    {% endif %}
+  </table>
+
+  <p style="font-size:14px; color:#4b5563; line-height:1.6; margin:0;">
+    Você pode bloquear ou revogar o acesso deste operador a qualquer momento em <strong>Administração de usuários</strong>.
+  </p>
+{% endblock %}
