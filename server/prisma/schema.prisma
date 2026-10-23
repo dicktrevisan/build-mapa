@@ -18,7 +18,10 @@ model User {
   endereco        Endereco?
   telefone        String
   emailSecundario String?
+  // LEGADO: vinculo unico de antes; o startup migra para UsuarioFazenda e limpa. Remover depois.
   fazenda         Fazenda?  @relation("FuncionariosFazenda", fields: [fazendaId], references: [id])
+  // Fazendas em que o usuario e operador (ser administrador vem de Fazenda.administradorId)
+  vinculos        UsuarioFazenda[]
   // Fazendas em que o usuario e o administrador
   fazendasAdministradas Fazenda[] @relation("AdministradorFazenda")
   role            Role
@@ -27,6 +30,12 @@ model User {
   bloqueado       Boolean   @default(false)
   lancamentos     Lancamento[]
   planoPessoal PlanoPessoal @default(CONVIDADO)
+  // Plano contratado pelo usuario: vale para as fazendas que ele administra
+  // (a fazenda nao tem plano; validade e modulos dela sao os do administrador)
+  plano        Planos       @default(OPERADOR)
+  validade     DateTime?
+  modulos      Modulos[]
+  pagamentos   Pagamento[]
   // Convites para operadores que este usuario enviou como administrador da fazenda
   convitesEnviados Convite[] @relation("ConvitesEnviados")
   // Lado virtual da relacao 1-1 (o Prisma exige); nada e gravado no usuario
@@ -43,20 +52,19 @@ model Fazenda {
   nome         String
   razaoSocial  String
   cnpj         String?
+  // LEGADO: usuarios do vinculo unico de antes (ver User.fazenda). Remover depois.
   funcionarios User[]      @relation("FuncionariosFazenda")
+  // Operadores da fazenda; o administrador nao tem vinculo (e o administradorId)
+  vinculos     UsuarioFazenda[]
   // Administrador da fazenda: toda fazenda criada tem um (opcional so para as ja existentes)
   // NoAction quebra o ciclo User.fazenda -> Fazenda.administrador (o app nao apaga usuarios nem troca ids)
   administrador   User?    @relation("AdministradorFazenda", fields: [administradorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   administradorId String?  @db.ObjectId
   endereco     String
-  modulos      Modulos[]
   area         Float
-  plano        Planos
   idioma       Idiomas     @relation(fields: [idiomasId], references: [id])
   idiomasId    String      @db.ObjectId
-  categorias   Categoria[]
-  validade     DateTime
-  pagamentos   Pagamento[]
+  agrupamentos Agrupamento[]
 
   // Dados da propriedade (base: properties)
   proprietario String?
@@ -81,8 +89,9 @@ model Fazenda {
 model Pagamento {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  fazenda   Fazenda? @relation(fields: [fazendaId], references: [id])
-  fazendaId String?  @db.ObjectId
+  // O pagamento e do usuario (o plano e dele)
+  usuario   User?    @relation(fields: [usuarioId], references: [id])
+  usuarioId String?  @db.ObjectId
   dataPagamento DateTime @default(now())
   validade DateTime
   cpfPagador String
@@ -114,7 +123,9 @@ enum Modulos {
   PESSOAL
 }
 
+// Plano do usuario: OPERADOR e o de quem entra por convite; quem paga um plano passa a ter o plano pago
 enum Planos {
+  OPERADOR
   STARTER
   PLUS
   PRO
@@ -135,30 +146,31 @@ model Idiomas {
   fazendas   Fazenda[]
 }
 
+// Agrupamento de categorias (ex.: Nutricao); a classificacao gerencial (tipo) fica aqui
+// e e o que o Consolidado e a Analise usam
+model Agrupamento {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  nome       String
+  descricao  String
+  icone      String
+  cor        String
+  tipo       TipoFluxo
+  categorias Categoria[]
+  fazenda    Fazenda?    @relation(fields: [fazendaId], references: [id])
+  fazendaId  String?     @db.ObjectId
+}
+
+// Categoria do lancamento (ex.: Concentrados), sempre dentro de um agrupamento
 model Categoria {
-  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
   nome          String
   descricao     String
   icone         String
   cor           String
-  subCategorias SubCategoria[]
-  fazenda       Fazenda?       @relation(fields: [fazendaId], references: [id])
-  fazendaId     String?        @db.ObjectId
+  agrupamento   Agrupamento  @relation(fields: [agrupamentoId], references: [id])
+  agrupamentoId String       @db.ObjectId
+  lancamentos   Lancamento[]
 }
-
-model SubCategoria {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  nome        String
-  descricao   String
-  icone       String
-  cor         String
-  categoria   Categoria @relation(fields: [categoriaId], references: [id])
-  categoriaId String    @db.ObjectId
-  tipo        TipoFluxo
-  lancamentos Lancamento[]
-}
-
-// --- Fluxo de caixa (base: cf_bancos, cf_titulares, cf_lancamentos, cf_orcamento, cf_zeragem) ---
 
 model Banco {
   id          String       @id @default(auto()) @map("_id") @db.ObjectId
@@ -186,8 +198,12 @@ model Lancamento {
   id              String             @id @default(auto()) @map("_id") @db.ObjectId
   descricao       String
   valor           Float
+  // Tipo fixo do lancamento (entrada ou saida do caixa)
+  tipo            TipoLancamento
+  // Lancamento e vencimento sao gerenciais; o pagamento e o que conta no caixa e no consolidado
   data            DateTime
-  dataVencimento  DateTime?
+  dataVencimento  DateTime
+  dataPagamento   DateTime?
   mesesUtilizacao Int                @default(1)
   situacao        SituacaoLancamento @default(FINALIZADO)
   semNotaFiscal   Boolean            @default(false)
@@ -199,8 +215,8 @@ model Lancamento {
 
   fazenda        Fazenda      @relation(fields: [fazendaId], references: [id])
   fazendaId      String       @db.ObjectId
-  subCategoria   SubCategoria @relation(fields: [subCategoriaId], references: [id])
-  subCategoriaId String       @db.ObjectId
+  categoria      Categoria    @relation(fields: [categoriaId], references: [id])
+  categoriaId    String       @db.ObjectId
   banco          Banco?       @relation(fields: [bancoId], references: [id])
   bancoId        String?      @db.ObjectId
   titular        Titular?     @relation(fields: [titularId], references: [id])
@@ -315,6 +331,15 @@ enum TipoFluxo {
   NAO_OPERACIONAL
 }
 
+// Tipos fixos do lancamento; os externos ainda serao categorizados
+enum TipoLancamento {
+  RECEITAS
+  DESPESAS
+  RECEITAS_EXTERNAS
+  DESPESAS_EXTERNAS
+}
+
+// ABERTO = pendente (sem pagamento); FINALIZADO = efetivado (com data de pagamento)
 enum SituacaoLancamento {
   ABERTO
   FINALIZADO
@@ -350,9 +375,26 @@ enum SecaoBalanco {
   PLP
 }
 
+// Usuario como operador de uma fazenda: um usuario pode ser operador de varias
+// fazendas e administrador de outras (Fazenda.administradorId)
+model UsuarioFazenda {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  usuario   User     @relation(fields: [usuarioId], references: [id])
+  usuarioId String   @db.ObjectId
+  fazenda   Fazenda  @relation(fields: [fazendaId], references: [id])
+  fazendaId String   @db.ObjectId
+  createdAt DateTime @default(now())
+
+  @@unique([usuarioId, fazendaId])
+}
+
+// PREMIUM: tem plano e pode administrar fazendas (o admin de cada fazenda e o Fazenda.administradorId)
+// GERENTE: parametros da aplicacao e cria usuarios admin (plano e validade); tambem pode administrar fazendas
+// MASTER: tudo do GERENTE, mais as variaveis do servidor e tornar usuarios GERENTE
 enum Role {
-  ADMIN
+  PREMIUM
   USER
+  GERENTE
   MASTER
 }
 
@@ -366,6 +408,7 @@ model Convite {
   status         StatusConvite @default(PENDENTE)
   validade       DateTime
   aceitoEm       DateTime?
+  excluidoEm     DateTime?
   fazenda        Fazenda       @relation(fields: [fazendaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   fazendaId      String        @db.ObjectId
   convidadoPor   User          @relation("ConvitesEnviados", fields: [convidadoPorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -375,10 +418,11 @@ model Convite {
   updatedAt DateTime @updatedAt
 }
 
+// Convite cancelado antes do aceite e apagado; EXCLUIDO = operador removido da fazenda depois do aceite
 enum StatusConvite {
   PENDENTE
   ACEITO
-  CANCELADO
+  EXCLUIDO
 }
 
 enum AuthType {
@@ -483,4 +527,35 @@ enum TipoContaPessoal {
 enum TipoLancamentoPessoal {
   RECEITA
   DESPESA
+}
+
+// Parametros variaveis da aplicacao. GERAL e INDICADOR: GERENTE e MASTER alteram; SERVIDOR: so o MASTER.
+// GERAL e SERVIDOR usam `valor`; INDICADOR usa as faixas de cor da Analise financeira (bom = azul, aviso = amarelo,
+// perigo = vermelho), conforme o sentido (maior ou menor e melhor)
+model Parametro {
+  id        String            @id @default(auto()) @map("_id") @db.ObjectId
+  chave     String            @unique
+  nome      String
+  descricao String?
+  grupo     GrupoParametro
+  ordem     Int               @default(0)
+  // percentual (guardado em fracao: 0.4 = 40%), moeda ou numero
+  formato   String            @default("numero")
+  valor     Float?
+  sentido   SentidoIndicador?
+  bom       Float?
+  aviso     Float?
+  perigo    Float?
+  updatedAt DateTime          @updatedAt
+}
+
+enum GrupoParametro {
+  GERAL
+  INDICADOR
+  SERVIDOR
+}
+
+enum SentidoIndicador {
+  MAIOR_MELHOR
+  MENOR_MELHOR
 }
