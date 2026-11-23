@@ -64,13 +64,18 @@ model Fazenda {
   area         Float
   idioma       Idiomas     @relation(fields: [idiomasId], references: [id])
   idiomasId    String      @db.ObjectId
-  agrupamentos Agrupamento[]
 
   // Dados da propriedade (base: properties)
   proprietario String?
   unidadesMo   Float       @default(0)
   aliquotaIr   Float       @default(0)
   fotoPath     String?
+
+  // Anotacoes do planejamento orcamentario: uma por aba (despesas, receitas e todos),
+  // unicas da fazenda (valem para todos os anos)
+  anotacaoOrcamentoDespesas String?
+  anotacaoOrcamentoReceitas String?
+  anotacaoOrcamentoTodos    String?
 
   bancos               Banco[]
   titulares            Titular[]
@@ -146,30 +151,28 @@ model Idiomas {
   fazendas   Fazenda[]
 }
 
-// Agrupamento de categorias (ex.: Nutricao); a classificacao gerencial (tipo) fica aqui
-// e e o que o Consolidado e a Analise usam
-model Agrupamento {
-  id         String      @id @default(auto()) @map("_id") @db.ObjectId
-  nome       String
-  descricao  String
-  icone      String
-  cor        String
-  tipo       TipoFluxo
-  categorias Categoria[]
-  fazenda    Fazenda?    @relation(fields: [fazendaId], references: [id])
-  fazendaId  String?     @db.ObjectId
-}
-
-// Categoria do lancamento (ex.: Concentrados), sempre dentro de um agrupamento
+// Categoria do lancamento (ex.: Nutricao): a forma de compilar os dados. Global: vale para
+// todas as fazendas e so o GERENTE e o MASTER cadastram (painel administrativo).
+// O tipo e fixo: cada tipo tem as suas categorias e o lancamento so usa categoria do mesmo tipo
 model Categoria {
-  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
   nome          String
   descricao     String
   icone         String
   cor           String
-  agrupamento   Agrupamento  @relation(fields: [agrupamentoId], references: [id])
-  agrupamentoId String       @db.ObjectId
+  tipo          TipoLancamento
+  subcategorias Subcategoria[]
   lancamentos   Lancamento[]
+}
+
+// Subcategoria (ex.: Concentrados), opcional: so algumas categorias tem.
+// Categoria com subcategorias exige uma delas no lancamento; o tipo e o da categoria
+model Subcategoria {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  nome        String
+  categoria   Categoria    @relation(fields: [categoriaId], references: [id])
+  categoriaId String       @db.ObjectId
+  lancamentos Lancamento[]
 }
 
 model Banco {
@@ -198,7 +201,7 @@ model Lancamento {
   id              String             @id @default(auto()) @map("_id") @db.ObjectId
   descricao       String
   valor           Float
-  // Tipo fixo do lancamento (entrada ou saida do caixa)
+  // Tipo fixo do lancamento: sempre o mesmo da categoria
   tipo            TipoLancamento
   // Lancamento e vencimento sao gerenciais; o pagamento e o que conta no caixa e no consolidado
   data            DateTime
@@ -217,6 +220,9 @@ model Lancamento {
   fazendaId      String       @db.ObjectId
   categoria      Categoria    @relation(fields: [categoriaId], references: [id])
   categoriaId    String       @db.ObjectId
+  // Obrigatoria so quando a categoria tem subcategorias
+  subcategoria   Subcategoria? @relation(fields: [subcategoriaId], references: [id])
+  subcategoriaId String?      @db.ObjectId
   banco          Banco?       @relation(fields: [bancoId], references: [id])
   bancoId        String?      @db.ObjectId
   titular        Titular?     @relation(fields: [titularId], references: [id])
@@ -321,17 +327,9 @@ model BalancoPatrimonial {
   updatedAt DateTime @updatedAt
 }
 
-enum TipoFluxo {
-  RECEITAS
-  DESEMBOLSO
-  FIXO
-  VARIAVEL
-  DESPESA_FINANCEIRA
-  INVESTIMENTO
-  NAO_OPERACIONAL
-}
-
-// Tipos fixos do lancamento; os externos ainda serao categorizados
+// Tipos fixos da categoria e do lancamento: definem onde o lancamento conta.
+// Receitas e despesas: caixa, consolidado e resultado. Externos: caixa e
+// lancamentos diversos, fora do consolidado
 enum TipoLancamento {
   RECEITAS
   DESPESAS
