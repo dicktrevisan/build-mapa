@@ -86,6 +86,7 @@ model Fazenda {
   imobilizados         Imobilizado[]
   balancosPatrimoniais BalancoPatrimonial[]
   convites             Convite[]
+  producoesAuxiliares  ProducaoAuxiliar[]
 
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -126,6 +127,8 @@ enum Modulos {
   IMOBILIZADO
   STORAGE
   PESSOAL
+  // Producoes auxiliares: por enquanto em todos os planos pagos (sera limitado depois)
+  PRODUCOES
 }
 
 // Plano do usuario: OPERADOR e o de quem entra por convite; quem paga um plano passa a ter o plano pago
@@ -173,6 +176,8 @@ model Subcategoria {
   categoria   Categoria    @relation(fields: [categoriaId], references: [id])
   categoriaId String       @db.ObjectId
   lancamentos Lancamento[]
+  // Producoes auxiliares deste tipo (so as subcategorias da categoria fixa Producoes)
+  producoesAuxiliares ProducaoAuxiliar[]
 }
 
 model Banco {
@@ -229,6 +234,50 @@ model Lancamento {
   titularId      String?      @db.ObjectId
   operador       User?        @relation(fields: [operadorId], references: [id])
   operadorId     String?      @db.ObjectId
+  // Producao auxiliar do lancamento: as despesas compoem o custo dela; as receitas sao vendas
+  producaoAuxiliar   ProducaoAuxiliar? @relation(fields: [producaoAuxiliarId], references: [id])
+  producaoAuxiliarId String?           @db.ObjectId
+  // Venda de producao auxiliar: % da producao vendido neste lancamento (so na primeira parcela)
+  percentualVendido  Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --- Producoes auxiliares (reservas de producao da fazenda: silagem, feno...) ---
+
+// Em criacao: criada, sem despesas. Lancamento de despesas: ja tem despesas.
+// Em producao: iniciada, nao recebe mais despesas. Em utilizacao: a partir do inicio do uso
+// (entra no Ativo Circulante e pode ser vendida)
+enum StatusProducao {
+  EM_CRIACAO
+  LANCAMENTO_DESPESAS
+  EM_PRODUCAO
+  EM_UTILIZACAO
+}
+
+model ProducaoAuxiliar {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  nome           String
+  // Tipo da producao: uma subcategoria da categoria fixa Producoes (ex.: Silagem)
+  subcategoria   Subcategoria   @relation(fields: [subcategoriaId], references: [id])
+  subcategoriaId String         @db.ObjectId
+  dataInicio     DateTime
+  status         StatusProducao @default(EM_CRIACAO)
+
+  // Utilizacao: preenchida depois de iniciar a producao
+  inicioUso            DateTime?
+  // Meses
+  duracaoPrevista      Int?
+  valorReal            Float?
+  // Quanto ja foi usado (0 a 100 cada, nao precisam somar 100), atualizado pelo usuario
+  percentualLactacao   Float     @default(0)
+  percentualRecria     Float     @default(0)
+  percentualVacasSecas Float     @default(0)
+
+  lancamentos Lancamento[]
+  fazenda     Fazenda      @relation(fields: [fazendaId], references: [id])
+  fazendaId   String       @db.ObjectId
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
