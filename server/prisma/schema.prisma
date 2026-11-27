@@ -247,13 +247,22 @@ model Lancamento {
 // --- Producoes auxiliares (reservas de producao da fazenda: silagem, feno...) ---
 
 // Em criacao: criada, sem despesas. Lancamento de despesas: ja tem despesas.
-// Em producao: iniciada, nao recebe mais despesas. Em utilizacao: a partir do inicio do uso
-// (entra no Ativo Circulante e pode ser vendida)
+// Em producao: botao Producao; nao recebe mais despesas e o custo entra no Ativo Circulante.
+// Botao Utilizacao: com o inicio do uso no futuro fica Utilizacao agendada e passa sozinha a
+// Em utilizacao quando a data chega. Em utilizacao: o valor no ativo cai por dia e pode ser vendida
 enum StatusProducao {
   EM_CRIACAO
   LANCAMENTO_DESPESAS
   EM_PRODUCAO
+  UTILIZACAO_AGENDADA
   EM_UTILIZACAO
+}
+
+// Unidade da quantidade produzida
+enum UnidadeProducao {
+  KG
+  TONELADA
+  ARROBA
 }
 
 model ProducaoAuxiliar {
@@ -265,15 +274,24 @@ model ProducaoAuxiliar {
   dataInicio     DateTime
   status         StatusProducao @default(EM_CRIACAO)
 
-  // Utilizacao: preenchida depois de iniciar a producao
+  // Producao (modal do botao Producao): dia em que o custo entra no ativo (o do clique,
+  // editavel pelo lapis), quantidade produzida e unidade. O valor por unidade e o custo
+  // dividido pela quantidade (calculado, nao gravado)
+  dataProducao        DateTime?
+  quantidadeProduzida Float?
+  unidadeMedida       UnidadeProducao?
+
+  // Utilizacao (modal do botao Utilizacao): a partir do inicio do uso o valor no ativo cai
+  // por dia ate zerar no fim da duracao estimada (meses)
   inicioUso            DateTime?
-  // Meses
   duracaoPrevista      Int?
-  valorReal            Float?
-  // Quanto ja foi usado (0 a 100 cada, nao precisam somar 100), atualizado pelo usuario
+  // Quanto ja foi usado (0 a 100 cada, nao precisam somar 100): so indicativo
   percentualLactacao   Float     @default(0)
   percentualRecria     Float     @default(0)
   percentualVacasSecas Float     @default(0)
+
+  // Depois da producao tudo fica travado; o lapis abre a edicao (dados e lancamentos) ate salvar
+  emEdicao Boolean @default(false)
 
   lancamentos Lancamento[]
   fazenda     Fazenda      @relation(fields: [fazendaId], references: [id])
